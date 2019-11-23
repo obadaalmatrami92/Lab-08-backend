@@ -15,7 +15,7 @@ server.use(cors());
 
 server.get('/location', locationHandler);
 server.get('/weather', weatherHandler);
-server.get('/events', eventsHadler);
+server.get('/events', eventsHandler);
 
 function locationHandler(req, res) {
     // Query String = ?a=b&c=d
@@ -68,7 +68,7 @@ function getWeather(query) {
 
 function Weather(day) {
     this.forecast = day.summary;
-    this.time = new Date(day.time * 1000).toDateString();
+    this.time = new Date(day.time * 1022).toDateString();
 }
 
 function eventsHandler(req, res) {
