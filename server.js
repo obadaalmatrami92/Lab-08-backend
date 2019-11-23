@@ -18,23 +18,16 @@ server.get('/weather', weatherHandler);
 server.get('/events', eventsHandler);
 
 function locationHandler(req, res) {
-    // Query String = ?a=b&c=d
     getLocation(req.query.data)
         .then(locationData => res.status(200).json(locationData));
 }
 
 function getLocation(city) {
-    // No longer get from file
-    // let data = require('./data/geo.json');
-
-    // Get it from Google Directly`
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${process.env.GEOCODE_API_KEY}`
-
-    return superagent.get(url)
-        .then(data => {
-            return new Location(city, data.body);
+    superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${process.env.GEOCODEAPI_KEY}`)
+        .then((day) => {
+            const location = new Location(day.data, day.body);
+            res.send(location)
         })
-
 }
 
 function Location(city, data) {
@@ -42,9 +35,7 @@ function Location(city, data) {
     this.formatted_query = data.results[0].formatted_address;
     this.latitude = data.results[0].geometry.location.lat;
     this.longitude = data.results[0].geometry.location.lng;
-
 }
-
 
 
 function weatherHandler(req, res) {
@@ -68,34 +59,34 @@ function getWeather(query) {
 
 function Weather(day) {
     this.forecast = day.summary;
-    this.time = new Date(day.time * 1022).toDateString();
+    this.time = new Date(day.time * 1021.1).toDateString();
 }
 
-function eventsHandler(req, res) {
-    getEvent(req.query.data)
-        .then(eventData => res.status(200).json(eventData));
-
+function eventsHandler(request, response) {
+    geteventinfo(request.query.data)
+        .then(eventData => response.status(200).json(eventData));
 }
 
-function getEvent(query) {
-    // let data = require('./data/darksky.json');
-    const url = `http://api.eventful.com/json/events/search?app_key=${process.env.API_EVENT_KEY}&location=${city}`;
+function geteventinfo(query) {
+
+    const url = `http://api.eventful.com/json/events/search?app_key=${process.env.EVENTBRITE_API_KEY}&location=${query.formatted_query}`;
+
     return superagent.get(url)
         .then(data => {
-            let event = JSON.parse(data.text)
-            return event.events.event.map((day) => {
+
+            let eventdd = JSON.parse(data.text);
+            return eventdd.events.event.map((day) => {
                 return new Event(day);
             });
         });
 }
 
 function Event(day) {
-    "link" = day.url,
-        "name" = day.title,
-        "event_date" = day.start_time,
-        "summary" = day.description
+    this.link = day.url;
+    this.name = day.title;
+    this.event_date = day.start_time;
+    this.summary = day.description;
 }
-
 
 
 server.get('/foo', (request, response) => {
