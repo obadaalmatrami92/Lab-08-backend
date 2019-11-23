@@ -1,21 +1,17 @@
-'use strict';
-
-// Dependecies (express, cors, dotenv)
-
+`use strict`;
 require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
+const express = require('express')
+const cors = require('cors')
 const superagent = require('superagent');
-
 const PORT = process.env.PORT || 3000;
-
 const server = express();
-
 server.use(cors());
-
+server.get('/', (request, response) => {
+    response.status(200).send('Hello everyone')
+})
 server.get('/location', locationHandler);
 server.get('/weather', weatherHandler);
-server.get('/events', eventsHandler);
+server.get('/events', eventHandler);
 
 function locationHandler(req, res) {
     getLocation(req.query.data)
@@ -23,10 +19,11 @@ function locationHandler(req, res) {
 }
 
 function getLocation(city) {
-    superagent.get(`https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${process.env.GEOCODEAPI_KEY}`)
-        .then((day) => {
-            const location = new Location(day.data, day.body);
-            res.send(location)
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${process.env.GEOCODE_API_KEY}`
+    console.log('url', url);
+    return superagent.get(url)
+        .then(data => {
+            return new Location(city, data.body);
         })
 }
 
@@ -37,17 +34,15 @@ function Location(city, data) {
     this.longitude = data.results[0].geometry.location.lng;
 }
 
-
 function weatherHandler(req, res) {
-    // Query String = ?a=b&c=d...
+    // Query String = ?a=b&c=d
     getWeather(req.query.data)
         .then(weatherData => res.status(200).json(weatherData));
-
 }
 
 function getWeather(query) {
-    // let data = require('./data/darksky.json');
     const url = `https://api.darksky.net/forecast/${process.env.DARKSKY_API_KEY}/${query.latitude},${query.longitude}`;
+    console.log('url', url);
     return superagent.get(url)
         .then(data => {
             let weather = data.body;
@@ -59,24 +54,22 @@ function getWeather(query) {
 
 function Weather(day) {
     this.forecast = day.summary;
-    this.time = new Date(day.time * 1021.1).toDateString();
+    this.time = new Date(day.time * 1000).toDateString();
 }
 
-function eventsHandler(request, response) {
-    geteventinfo(request.query.data)
-        .then(eventData => response.status(200).json(eventData));
+function eventHandler(req, res) {
+    getEvent(req.query.data)
+        .then(eventData => res.status(200).json(eventData));
 }
 
-function geteventinfo(query) {
-
-    const url = `http://api.eventful.com/json/events/search?app_key=${process.env.EVENTBRITE_API_KEY}&location=${query.formatted_query}`;
-
+function getEvent(query) {
+    const url = `http://api.eventful.com/json/events/search?app_key=${process.env.EVENTFUL_API_KEY}&location=${query.formatted_query}`;
+    console.log('naseem', url);
     return superagent.get(url)
         .then(data => {
-
-            let eventdd = JSON.parse(data.text);
-            return eventdd.events.event.map((day) => {
-                return new Event(day);
+            const eventData = JSON.parse(data.text);
+            return eventData.events.event.map((eventday) => {
+                return new Event(eventday);
             });
         });
 }
@@ -84,21 +77,16 @@ function geteventinfo(query) {
 function Event(day) {
     this.link = day.url;
     this.name = day.title;
-    this.event_date = day.start_time;
+    this.event_data = day.start_time;
     this.summary = day.description;
 }
-
-
 server.get('/foo', (request, response) => {
-    throw new Error('Error');
+    throw new Error('ops');
 });
-
 server.use('*', (request, response) => {
-    response.status(404).send('Not Found');
+    response.status(404).send('Not Found')
 });
-
 server.use((error, request, response) => {
-    response.status(500).send('Sorry , something goes wrong ');
+    response.status(500).send(error)
 });
-
-server.listen(PORT, () => console.log('hello world', PORT));
+server.listen(PORT, () => console.log(`app listening on ${PORT}`))
